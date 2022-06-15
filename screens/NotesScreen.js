@@ -7,9 +7,17 @@ import {
   FlatList,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import firebase from "../database/firebaseDB";
+
 
 export default function NotesScreen({ navigation, route }) {
   const [notes, setNotes] = useState([]);
+  firebase.firestore().collection("testing").add({
+    title: "testing",
+    body: "checking if this works",
+    potato: true,
+    questions: 'what?'
+  });
 
   // This is to set up the top right button
   useEffect(() => {
@@ -38,9 +46,24 @@ export default function NotesScreen({ navigation, route }) {
         done: false,
         id: notes.length.toString(),
       };
-      setNotes([...notes, newNote]);
+      firebase.firestore().collection("todos").add(newNote);
     }
   }, [route.params?.text]);
+
+
+  useEffect(() => {
+    const unsubscribe = firebase
+    .firestore()
+    .collection("todos")
+    .onSnapshot((collection)=> {
+      const updatedNotes = collection.docs.map((doc) => doc.data());
+      setNotes(updatedNotes);
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  },[]);
 
   function addNote() {
     navigation.navigate("Add Screen");
