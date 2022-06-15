@@ -9,15 +9,10 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import firebase from "../database/firebaseDB";
 
+const db = firebase.firestore().collection("todos");
 
 export default function NotesScreen({ navigation, route }) {
   const [notes, setNotes] = useState([]);
-  firebase.firestore().collection("testing").add({
-    title: "testing",
-    body: "checking if this works",
-    potato: true,
-    questions: 'what?'
-  });
 
   // This is to set up the top right button
   useEffect(() => {
@@ -44,19 +39,25 @@ export default function NotesScreen({ navigation, route }) {
       const newNote = {
         title: route.params.text,
         done: false,
-        id: notes.length.toString(),
       };
-      firebase.firestore().collection("todos").add(newNote);
+      db.add(newNote);
     }
   }, [route.params?.text]);
 
 
   useEffect(() => {
-    const unsubscribe = firebase
-    .firestore()
-    .collection("todos")
-    .onSnapshot((collection)=> {
-      const updatedNotes = collection.docs.map((doc) => doc.data());
+    const unsubscribe = db.onSnapshot((collection)=> {
+      const updatedNotes = collection.docs.map((doc) => {
+      // doc.data = {title: 'lunch'}
+      // {...doc.data, id: 123 }
+      // {title: 'lunch', id: 123 }
+        const noteObject = {
+          ...doc.data(), id: doc.id
+        };
+      console.log(noteObject);
+      return noteObject;
+      });
+
       setNotes(updatedNotes);
     });
 
@@ -73,7 +74,7 @@ export default function NotesScreen({ navigation, route }) {
   function deleteNote(id) {
     console.log("Deleting " + id);
     // To delete that item, we filter out the item we don't want
-    setNotes(notes.filter((item) => item.id !== id));
+  db.doc(id).delete();
   }
 
   // The function to render each row in our FlatList
